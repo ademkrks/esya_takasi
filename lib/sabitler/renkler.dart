@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-class Renkler {
-  Renkler._();
 
+class Renkler {
   static const Color anaRenk = Color(0xFF3D7FEF);
   static const Color anaRenkKoyu = Color(0xFF2558D9);
   static const Color vurguRenk = Color(0xFFFF7A45);

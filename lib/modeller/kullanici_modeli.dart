@@ -1,33 +1,33 @@
-// Uygulamadaki kullanıcıyı temsil eden model sınıfı
-class Kullanici {
-  final String id;
-  final String adSoyad;
-  final String eposta;
-  final String sifre;
-  final String? profilFoto;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  const Kullanici({
+class Kullanici {
+  String id;
+  String adSoyad;
+  String eposta;
+  String? profilFoto;
+
+  Kullanici({
     required this.id,
     required this.adSoyad,
     required this.eposta,
-    required this.sifre,
     this.profilFoto,
   });
 
-  // Kopyalama — bir alanı değiştirirken kullanılır
-  Kullanici kopyala({
-    String? id,
-    String? adSoyad,
-    String? eposta,
-    String? sifre,
-    String? profilFoto,
-  }) {
+  factory Kullanici.fromDoc(DocumentSnapshot doc) {
+    var data = doc.data() as Map<String, dynamic>;
     return Kullanici(
-      id: id ?? this.id,
-      adSoyad: adSoyad ?? this.adSoyad,
-      eposta: eposta ?? this.eposta,
-      sifre: sifre ?? this.sifre,
-      profilFoto: profilFoto ?? this.profilFoto,
+      id: doc.id,
+      adSoyad: data['adSoyad'] ?? '',
+      eposta: data['eposta'] ?? '',
+      profilFoto: data['profilFoto'],
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'adSoyad': adSoyad,
+      'eposta': eposta,
+      'profilFoto': profilFoto,
+    };
   }
 }

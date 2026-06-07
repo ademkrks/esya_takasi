@@ -1,19 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../enumlar/kategori.dart';
 import '../enumlar/urun_durumu.dart';
 
-// Kullanıcının sisteme eklediği takas ilanını temsil eden model
 class Ilan {
-  final String id;
-  final String kullaniciId;
-  final String urunAdi;
-  final String aciklama;
-  final Kategori kategori;
-  final UrunDurumu urunDurumu;
-  final String takasTercihi;
-  final String? fotografYolu;
-  final bool aktifMi;
+  String id;
+  String kullaniciId;
+  String urunAdi;
+  String aciklama;
+  Kategori kategori;
+  UrunDurumu urunDurumu;
+  String takasTercihi;
+  String? fotografYolu;
+  bool aktifMi;
+  DateTime olusturmaTarihi;
 
-  const Ilan({
+  Ilan({
     required this.id,
     required this.kullaniciId,
     required this.urunAdi,
@@ -23,30 +24,39 @@ class Ilan {
     required this.takasTercihi,
     this.fotografYolu,
     this.aktifMi = true,
+    required this.olusturmaTarihi,
   });
 
-  // Kopyalama — bir alanı değiştirirken kullanılır
-  Ilan kopyala({
-    String? id,
-    String? kullaniciId,
-    String? urunAdi,
-    String? aciklama,
-    Kategori? kategori,
-    UrunDurumu? urunDurumu,
-    String? takasTercihi,
-    String? fotografYolu,
-    bool? aktifMi,
-  }) {
+
+  factory Ilan.fromDoc(DocumentSnapshot doc) {
+    var data = doc.data() as Map<String, dynamic>;
     return Ilan(
-      id: id ?? this.id,
-      kullaniciId: kullaniciId ?? this.kullaniciId,
-      urunAdi: urunAdi ?? this.urunAdi,
-      aciklama: aciklama ?? this.aciklama,
-      kategori: kategori ?? this.kategori,
-      urunDurumu: urunDurumu ?? this.urunDurumu,
-      takasTercihi: takasTercihi ?? this.takasTercihi,
-      fotografYolu: fotografYolu ?? this.fotografYolu,
-      aktifMi: aktifMi ?? this.aktifMi,
+      id: doc.id,
+      kullaniciId: data['kullaniciId'] ?? '',
+      urunAdi: data['urunAdi'] ?? '',
+      aciklama: data['aciklama'] ?? '',
+      kategori: Kategori.values.firstWhere((k) => k.name == data['kategori'], orElse: () => Kategori.diger),
+      urunDurumu: UrunDurumu.values.firstWhere((u) => u.name == data['urunDurumu'], orElse: () => UrunDurumu.iyi),
+      takasTercihi: data['takasTercihi'] ?? '',
+      fotografYolu: data['fotografYolu'],
+      aktifMi: data['aktifMi'] ?? true,
+      olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp).toDate(),
     );
   }
+
+
+  Map<String, dynamic> toMap() {
+    return {
+      'kullaniciId': kullaniciId,
+      'urunAdi': urunAdi,
+      'aciklama': aciklama,
+      'kategori': kategori.name,
+      'urunDurumu': urunDurumu.name,
+      'takasTercihi': takasTercihi,
+      'fotografYolu': fotografYolu,
+      'aktifMi': aktifMi,
+      'olusturmaTarihi': Timestamp.fromDate(olusturmaTarihi),
+    };
+  }
+
 }

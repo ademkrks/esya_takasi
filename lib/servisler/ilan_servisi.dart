@@ -1,47 +1,63 @@
-import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../modeller/ilan_modeli.dart';
-import '../veri/mock_veri.dart';
 
-// İlan ekleme, listeleme ve durum değiştirme işlemlerini yöneten servis.
-// Firebase entegrasyonunda Firestore CRUD ile değiştirilecek.
 class IlanServisi {
-  final List<Ilan> _ilanlar = List.from(MockVeri.ilanlar);
-  final _uuid = const Uuid();
+  var _db = FirebaseFirestore.instance;
 
-  // Tüm aktif ilanları döner
-  List<Ilan> tumIlanlariGetir() {
-    return _ilanlar.where((i) => i.aktifMi).toList();
-  }
-
-  // Belirli kullanıcının ilanlarını döner
-  List<Ilan> kullaniciyaAitIlanlariGetir(String kullaniciId) {
-    return _ilanlar.where((i) => i.kullaniciId == kullaniciId).toList();
-  }
-
-  // Verilen id'ye sahip ilanı döner
-  Ilan? ilaniBul(String ilanId) {
+  Future<List<Ilan>> tumIlanlariGetir() async {
     try {
-      return _ilanlar.firstWhere((i) => i.id == ilanId);
-    } catch (_) {
+      var snapshot = await _db
+          .collection('ilanlar')
+          .where('aktifMi', isEqualTo: true)
+          .get();
+      var liste = snapshot.docs.map((doc) => Ilan.fromDoc(doc)).toList();
+      liste.sort((a, b) => b.olusturmaTarihi.compareTo(a.olusturmaTarihi));
+      return liste;
+    } catch (e) {
+      print('ilanlar getirme hatasi: $e');
+      return [];
+    }
+  }
+
+  Future<List<Ilan>> kullaniciyaAitIlanlariGetir(String kullaniciId) async {
+    try {
+      var snapshot = await _db
+          .collection('ilanlar')
+          .where('kullaniciId', isEqualTo: kullaniciId)
+          .get();
+      var liste = snapshot.docs.map((doc) => Ilan.fromDoc(doc)).toList();
+      liste.sort((a, b) => b.olusturmaTarihi.compareTo(a.olusturmaTarihi));
+      return liste;
+    } catch (e) {
+      print('kullanici ilanlari hatasi: $e');
+      return [];
+    }
+  }
+
+  Future<Ilan?> ilaniBul(String ilanId) async {
+    try {
+      var doc = await _db.collection('ilanlar').doc(ilanId).get();
+      if (!doc.exists) return null;
+      return Ilan.fromDoc(doc);
+    } catch (e) {
+      print('ilan bul hatasi: $e');
       return null;
     }
   }
 
-  // Yeni ilan ekler ve oluşturulan ilanı döner
-  Ilan ilanEkle({
-    required String kullaniciId,
-    required Ilan ilanBilgisi,
-  }) {
-    final yeniIlan = ilanBilgisi.kopyala(id: _uuid.v4());
-    _ilanlar.add(yeniIlan);
-    return yeniIlan;
+  Future<Ilan> ilanEkle({required String kullaniciId, required Ilan ilanBilgisi}) async {
+    var yeni = ilanBilgisi;
+    yeni.kullaniciId = kullaniciId;
+    var ref = await _db.collection('ilanlar').add(yeni.toMap());
+    yeni.id = ref.id;
+    return yeni;
   }
 
-  // İlanın aktif/pasif durumunu değiştirir
-  void ilanDurumunuGuncelle(String ilanId, bool aktifMi) {
-    final indeks = _ilanlar.indexWhere((i) => i.id == ilanId);
-    if (indeks >= 0) {
-      _ilanlar[indeks] = _ilanlar[indeks].kopyala(aktifMi: aktifMi);
+  Future<void> ilanDurumunuGuncelle(String ilanId, bool aktifMi) async {
+    try {
+      await _db.collection('ilanlar').doc(ilanId).update({'aktifMi': aktifMi});
+    } catch (e) {
+      print('ilan guncelleme hatasi: $e');
     }
   }
 }

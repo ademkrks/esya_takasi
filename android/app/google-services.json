@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "770536991103",
+    "project_id": "esya-takas",
+    "storage_bucket": "esya-takas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770536991103:android:03d52a1342f99ba15b524a",
+        "android_client_info": {
+          "package_name": "com.ogrenci.esya_takas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQUPbFadxavy4irBnT-6x0SP5K9Co0JpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

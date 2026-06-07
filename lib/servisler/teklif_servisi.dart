@@ -1,35 +1,48 @@
-import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../enumlar/teklif_durumu.dart';
 import '../modeller/teklif_modeli.dart';
-import '../veri/mock_veri.dart';
 
-// Takas teklifi gönderme, listeleme ve güncelleme işlemlerini yöneten servis.
-// Firebase entegrasyonunda Firestore ile değiştirilecek.
 class TeklifServisi {
-  final List<Teklif> _teklifler = List.from(MockVeri.teklifler);
-  final _uuid = const Uuid();
+  var _db = FirebaseFirestore.instance;
 
-  // Belirli kullanıcıya gelen teklifleri döner
-  List<Teklif> gelenTeklifleriGetir(String kullaniciId) {
-    return _teklifler.where((t) => t.aliciKullaniciId == kullaniciId).toList();
+  Future<List<Teklif>> gelenTeklifleriGetir(String kullaniciId) async {
+    try {
+      var snapshot = await _db
+          .collection('teklifler')
+          .where('aliciKullaniciId', isEqualTo: kullaniciId)
+          .get();
+      var liste = snapshot.docs.map((doc) => Teklif.fromDoc(doc)).toList();
+      liste.sort((a, b) => b.olusturmaTarihi.compareTo(a.olusturmaTarihi));
+      return liste;
+    } catch (e) {
+      print('gelen teklifler hatasi: $e');
+      return [];
+    }
   }
 
-  // Belirli kullanıcının gönderdiği teklifleri döner
-  List<Teklif> gonderilenTeklifleriGetir(String kullaniciId) {
-    return _teklifler
-        .where((t) => t.gonderenKullaniciId == kullaniciId)
-        .toList();
+  Future<List<Teklif>> gonderilenTeklifleriGetir(String kullaniciId) async {
+    try {
+      var snapshot = await _db
+          .collection('teklifler')
+          .where('gonderenKullaniciId', isEqualTo: kullaniciId)
+          .get();
+      var liste = snapshot.docs.map((doc) => Teklif.fromDoc(doc)).toList();
+      liste.sort((a, b) => b.olusturmaTarihi.compareTo(a.olusturmaTarihi));
+      return liste;
+    } catch (e) {
+      print('gonderilen teklifler hatasi: $e');
+      return [];
+    }
   }
 
-  // Yeni teklif gönderir ve oluşturulan teklifi döner
-  Teklif teklifGonder({
+  Future<Teklif> teklifGonder({
     required String gonderenKullaniciId,
     required String aliciKullaniciId,
     required String hedefIlanId,
     required String teklifEdilenIlanId,
-  }) {
-    final yeniTeklif = Teklif(
-      id: _uuid.v4(),
+  }) async {
+    var yeni = Teklif(
+      id: '',
       gonderenKullaniciId: gonderenKullaniciId,
       aliciKullaniciId: aliciKullaniciId,
       hedefIlanId: hedefIlanId,
@@ -37,15 +50,16 @@ class TeklifServisi {
       durum: TeklifDurumu.beklemede,
       olusturmaTarihi: DateTime.now(),
     );
-    _teklifler.add(yeniTeklif);
-    return yeniTeklif;
+    var ref = await _db.collection('teklifler').add(yeni.toMap());
+    yeni.id = ref.id;
+    return yeni;
   }
 
-  // Mevcut bir teklifin durumunu günceller (kabul / red)
-  void teklifDurumunuGuncelle(String teklifId, TeklifDurumu yeniDurum) {
-    final indeks = _teklifler.indexWhere((t) => t.id == teklifId);
-    if (indeks >= 0) {
-      _teklifler[indeks] = _teklifler[indeks].kopyala(durum: yeniDurum);
+  Future<void> teklifDurumunuGuncelle(String teklifId, TeklifDurumu yeniDurum) async {
+    try {
+      await _db.collection('teklifler').doc(teklifId).update({'durum': yeniDurum.name});
+    } catch (e) {
+      print('teklif guncelleme hatasi: $e');
     }
   }
 }

@@ -2,29 +2,27 @@ import 'package:flutter/material.dart';
 import '../enumlar/teklif_durumu.dart';
 import '../modeller/teklif_modeli.dart';
 import '../servisler/teklif_servisi.dart';
+import '../servisler/ilan_servisi.dart';
 
-// Teklif listesini ve teklif işlemlerini tüm uygulama genelinde yöneten sağlayıcı
 class TeklifSaglayici extends ChangeNotifier {
-  final TeklifServisi _teklifServisi = TeklifServisi();
+  TeklifServisi _servis = TeklifServisi();
+  var _ilanServis = IlanServisi();
 
-  // Belirli kullanıcıya gelen teklifleri döner
-  List<Teklif> gelenTeklifler(String kullaniciId) {
-    return _teklifServisi.gelenTeklifleriGetir(kullaniciId);
+  Future<List<Teklif>> gelenTeklifler(String kullaniciId) async {
+    return await _servis.gelenTeklifleriGetir(kullaniciId);
   }
 
-  // Belirli kullanıcının gönderdiği teklifleri döner
-  List<Teklif> gonderilenTeklifler(String kullaniciId) {
-    return _teklifServisi.gonderilenTeklifleriGetir(kullaniciId);
+  Future<List<Teklif>> gonderilenTeklifler(String kullaniciId) async {
+    return await _servis.gonderilenTeklifleriGetir(kullaniciId);
   }
 
-  // Yeni teklif gönderir ve dinleyicileri bilgilendirir
-  void teklifGonder({
+  Future<void> teklifGonder({
     required String gonderenKullaniciId,
     required String aliciKullaniciId,
     required String hedefIlanId,
     required String teklifEdilenIlanId,
-  }) {
-    _teklifServisi.teklifGonder(
+  }) async {
+    await _servis.teklifGonder(
       gonderenKullaniciId: gonderenKullaniciId,
       aliciKullaniciId: aliciKullaniciId,
       hedefIlanId: hedefIlanId,
@@ -33,9 +31,16 @@ class TeklifSaglayici extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Teklif durumunu kabul veya reddedildi olarak günceller
-  void teklifDurumunuGuncelle(String teklifId, TeklifDurumu yeniDurum) {
-    _teklifServisi.teklifDurumunuGuncelle(teklifId, yeniDurum);
+  Future<void> teklifDurumunuGuncelle(Teklif teklif, TeklifDurumu yeniDurum) async {
+    await _servis.teklifDurumunuGuncelle(teklif.id, yeniDurum);
+
+
+    if (yeniDurum == TeklifDurumu.kabulEdildi) {
+      await _ilanServis.ilanDurumunuGuncelle(teklif.hedefIlanId, false);
+      await _ilanServis.ilanDurumunuGuncelle(teklif.teklifEdilenIlanId, false);
+      print('her iki ilan pasife alindi');
+    }
+
     notifyListeners();
   }
 }

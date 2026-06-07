@@ -1,16 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../enumlar/teklif_durumu.dart';
 
-// İki kullanıcı arasındaki takas teklifini temsil eden model
 class Teklif {
-  final String id;
-  final String gonderenKullaniciId;
-  final String aliciKullaniciId;
-  final String hedefIlanId;
-  final String teklifEdilenIlanId;
-  final TeklifDurumu durum;
-  final DateTime olusturmaTarihi;
+  String id;
+  String gonderenKullaniciId;
+  String aliciKullaniciId;
+  String hedefIlanId;
+  String teklifEdilenIlanId;
+  TeklifDurumu durum;
+  DateTime olusturmaTarihi;
 
-  const Teklif({
+  Teklif({
     required this.id,
     required this.gonderenKullaniciId,
     required this.aliciKullaniciId,
@@ -20,24 +20,28 @@ class Teklif {
     required this.olusturmaTarihi,
   });
 
-  // Kopyalama — teklif durumu güncellenirken kullanılır
-  Teklif kopyala({
-    String? id,
-    String? gonderenKullaniciId,
-    String? aliciKullaniciId,
-    String? hedefIlanId,
-    String? teklifEdilenIlanId,
-    TeklifDurumu? durum,
-    DateTime? olusturmaTarihi,
-  }) {
+  factory Teklif.fromDoc(DocumentSnapshot doc) {
+    var data = doc.data() as Map<String, dynamic>;
     return Teklif(
-      id: id ?? this.id,
-      gonderenKullaniciId: gonderenKullaniciId ?? this.gonderenKullaniciId,
-      aliciKullaniciId: aliciKullaniciId ?? this.aliciKullaniciId,
-      hedefIlanId: hedefIlanId ?? this.hedefIlanId,
-      teklifEdilenIlanId: teklifEdilenIlanId ?? this.teklifEdilenIlanId,
-      durum: durum ?? this.durum,
-      olusturmaTarihi: olusturmaTarihi ?? this.olusturmaTarihi,
+      id: doc.id,
+      gonderenKullaniciId: data['gonderenKullaniciId'] ?? '',
+      aliciKullaniciId: data['aliciKullaniciId'] ?? '',
+      hedefIlanId: data['hedefIlanId'] ?? '',
+      teklifEdilenIlanId: data['teklifEdilenIlanId'] ?? '',
+      durum: TeklifDurumu.values.firstWhere((d) => d.name == data['durum'], orElse: () => TeklifDurumu.beklemede),
+      olusturmaTarihi: (data['olusturmaTarihi'] as Timestamp).toDate(),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'gonderenKullaniciId': gonderenKullaniciId,
+      'aliciKullaniciId': aliciKullaniciId,
+      'hedefIlanId': hedefIlanId,
+      'teklifEdilenIlanId': teklifEdilenIlanId,
+      'durum': durum.name,
+      'olusturmaTarihi': Timestamp.fromDate(olusturmaTarihi),
+    };
+  }
+
 }
