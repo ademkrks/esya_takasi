@@ -4,6 +4,8 @@ import '../saglayicilar/kimlik_saglayici.dart';
 import '../sabitler/renkler.dart';
 import '../gezinme/ana_gezinme.dart';
 
+// kayıt ol ekranı
+// giriş ekranına çok benziyor ama bir de ad soyad var
 class KayitEkrani extends StatefulWidget {
   const KayitEkrani({super.key});
 
@@ -21,6 +23,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
 
   @override
   void dispose() {
+    // controller'ları temizlemeyi unutmuyoruz
     _adSoyadKontrol.dispose();
     _epostaKontrol.dispose();
     _sifreKontrol.dispose();
@@ -31,6 +34,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
     if (!_formAnahtari.currentState!.validate()) return;
 
     setState(() => _yukleniyor = true);
+    // gecikme ekledik, yükleniyor animasyonu görünsün diye
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
@@ -45,11 +49,14 @@ class _KayitEkraniState extends State<KayitEkrani> {
     setState(() => _yukleniyor = false);
 
     if (basarili) {
+      // başarılıysa tüm önceki ekranları temizleyip ana sayfaya gidiyoruz
+      // pushAndRemoveUntil ile geri dönme engelleniyor
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AnaGezinme()),
-        (route) => false,
+        (route) => false,  // hepsini kaldır
       );
     } else {
+      // eposta zaten kullanılıyorsa hata gösteriyoruz
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bu e-posta zaten kullaniliyor.'), backgroundColor: Renkler.hataRenk),
       );
@@ -60,6 +67,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        // turuncu tonlu gradient, giriş ekranından farklı hissettirsin diye
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -74,6 +82,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
+                // geri butonu, sol üste koyduk
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
@@ -98,6 +107,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
                 const SizedBox(height: 24),
 
 
+                // kayıt formu
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -118,9 +128,10 @@ class _KayitEkraniState extends State<KayitEkrani> {
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Renkler.ikinciMetin)),
                         const SizedBox(height: 18),
 
+                        // ad soyad alanı
                         TextFormField(
                           controller: _adSoyadKontrol,
-                          textCapitalization: TextCapitalization.words,
+                          textCapitalization: TextCapitalization.words,  // her kelimenin ilk harfi büyük
                           decoration: const InputDecoration(
                             labelText: 'Ad soyad',
                             hintText: 'Ali Veli',
@@ -134,6 +145,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
                         ),
                         const SizedBox(height: 14),
 
+                        // e-posta alanı
                         TextFormField(
                           controller: _epostaKontrol,
                           keyboardType: TextInputType.emailAddress,
@@ -150,6 +162,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
                         ),
                         const SizedBox(height: 14),
 
+                        // şifre alanı
                         TextFormField(
                           controller: _sifreKontrol,
                           obscureText: _sifreGizli,
@@ -170,6 +183,7 @@ class _KayitEkraniState extends State<KayitEkrani> {
                         ),
                         const SizedBox(height: 20),
 
+                        // kayıt ol butonu
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(

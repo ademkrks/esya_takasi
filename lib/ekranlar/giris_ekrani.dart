@@ -5,6 +5,7 @@ import '../sabitler/renkler.dart';
 import '../gezinme/ana_gezinme.dart';
 import 'kayit_ekrani.dart';
 
+// giriş ekranı, email ve şifre ile firebase'e giriş yapıyoruz
 class GirisEkrani extends StatefulWidget {
   const GirisEkrani({super.key});
 
@@ -13,27 +14,32 @@ class GirisEkrani extends StatefulWidget {
 }
 
 class _GirisEkraniState extends State<GirisEkrani> {
+  // form doğrulama için key, validate() çağırmak için lazım
   final _formAnahtari = GlobalKey<FormState>();
   final _epostaKontrol = TextEditingController();
   final _sifreKontrol = TextEditingController();
-  bool _sifreGizli = true;
-  bool _yukleniyor = false;
+  bool _sifreGizli = true;    // göz ikonuna basınca şifreyi gösteriyoruz
+  bool _yukleniyor = false;   // buton durumu için
 
   @override
   void dispose() {
+    // controller'ları temizliyoruz, memory leak olmasın
     _epostaKontrol.dispose();
     _sifreKontrol.dispose();
     super.dispose();
   }
 
   Future<void> _girisYap() async {
+    // form geçerli değilse devam etme
     if (!_formAnahtari.currentState!.validate()) return;
 
     setState(() => _yukleniyor = true);
+    // biraz gecikme ekliyoruz, yükleniyor animasyonu görünsün
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
+    // saglayiciya giriş yap komutu veriyoruz
     var basarili = await context.read<KimlikSaglayici>().girisYap(
       _epostaKontrol.text.trim(),
       _sifreKontrol.text,
@@ -43,10 +49,12 @@ class _GirisEkraniState extends State<GirisEkrani> {
     setState(() => _yukleniyor = false);
 
     if (basarili) {
+      // başarılıysa ana sayfaya gidiyoruz, geri dönemesin diye pushReplacement kullandık
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const AnaGezinme()),
       );
     } else {
+      // başarısızsa hata mesajı gösteriyoruz
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('E-posta veya sifre hatali.'), backgroundColor: Renkler.hataRenk),
       );
@@ -57,6 +65,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        // hafif mavi gradient arka plan
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -72,7 +81,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
               children: [
                 const SizedBox(height: 12),
 
-
+                // logo kutusu
                 Container(
                   width: 68,
                   height: 68,
@@ -85,6 +94,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                   child: const Icon(Icons.swap_horizontal_circle_rounded, color: Colors.white, size: 36),
                 ),
                 const SizedBox(height: 18),
+                // başlık metni
                 Text(
                   'Takas icin hazirsan baslayalim',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 31, fontWeight: FontWeight.w800),
@@ -96,7 +106,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 ),
                 const SizedBox(height: 24),
 
-
+                // giriş formu kartı
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -117,6 +127,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Renkler.ikinciMetin)),
                         const SizedBox(height: 18),
 
+                        // e-posta alanı
                         TextFormField(
                           controller: _epostaKontrol,
                           keyboardType: TextInputType.emailAddress,
@@ -133,6 +144,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                         ),
                         const SizedBox(height: 14),
 
+                        // şifre alanı, göz ikonu ile göster/gizle özelliği var
                         TextFormField(
                           controller: _sifreKontrol,
                           obscureText: _sifreGizli,
@@ -153,6 +165,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                         ),
                         const SizedBox(height: 20),
 
+                        // giriş butonu, yükleniyorsa spinner gösteriyoruz
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -165,7 +178,8 @@ class _GirisEkraniState extends State<GirisEkrani> {
                         ),
                         const SizedBox(height: 18),
 
-
+                        // test için demo hesap bilgilerini gösteriyoruz
+                        // production'da bunu kaldırmak lazım ama şimdilik pratik
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -178,9 +192,9 @@ class _GirisEkraniState extends State<GirisEkrani> {
                             children: [
                               Text('Demo hesap', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
                               const SizedBox(height: 8),
-                              Text('E-posta: ahmet@test.com'),
+                              const Text('E-posta: ahmet@test.com'),
                               const SizedBox(height: 4),
-                              Text('Sifre: 123456'),
+                              const Text('Sifre: 123456'),
                             ],
                           ),
                         ),
@@ -190,6 +204,7 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 ),
                 const SizedBox(height: 18),
 
+                // kayıt ol linki
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

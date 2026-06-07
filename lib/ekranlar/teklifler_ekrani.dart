@@ -11,6 +11,8 @@ import '../sabitler/degerler.dart';
 import '../widgetlar/bos_durum_widget.dart';
 import '../widgetlar/teklif_karti.dart';
 
+// teklifler ekranı, gelen ve gönderilen teklifleri ayrı sekmelerde gösteriyor
+// SingleTickerProviderStateMixin ekledik çünkü TabController için vsync lazım
 class TekliflerEkrani extends StatefulWidget {
   const TekliflerEkrani({super.key});
 
@@ -19,16 +21,18 @@ class TekliflerEkrani extends StatefulWidget {
 }
 
 class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProviderStateMixin {
-  late TabController _sekmeKontrol;
+  late TabController _sekmeKontrol;  // 2 sekme: gelen ve gönderilen
 
   @override
   void initState() {
     super.initState();
+    // 2 sekmeli controller oluşturuyoruz, vsync için this veriyoruz
     _sekmeKontrol = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
+    // controller'ı temizliyoruz
     _sekmeKontrol.dispose();
     super.dispose();
   }
@@ -39,6 +43,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
     var teklifSaglayici = context.watch<TeklifSaglayici>();
     var ilanSaglayici = context.read<IlanSaglayici>();
 
+    // hem gelen hem gönderilen teklifleri aynı anda çekiyoruz
     return FutureBuilder<List<List<Teklif>>>(
       future: Future.wait([
         teklifSaglayici.gelenTeklifler(kullaniciId),
@@ -51,6 +56,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
 
         var gelenler = snapshot.data?[0] ?? [];
         var gonderilenler = snapshot.data?[1] ?? [];
+        // kaç tane bekleyen teklif var, sayı badge olarak gösterilebilir ileride
         var bekleyenSayi = gelenler.where((t) => t.durum == TeklifDurumu.beklemede).length;
 
         return Scaffold(
@@ -61,6 +67,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
           body: Column(
             children: [
 
+              // özet istatistik kartı
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: Container(
@@ -69,7 +76,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Renkler.geceMavisi, Renkler.anaRenkKoyu],
+                      colors: [Renkler.geceMavisi, Renkler.anaRenkKoyu],  // koyu tema
                     ),
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: const [BoxShadow(color: Renkler.golge, blurRadius: 28, offset: Offset(0, 12))],
@@ -83,6 +90,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                       Text('Gelen ve gonderilen teklifleri buradan yonet.',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.82))),
                       const SizedBox(height: 18),
+                      // sayısal özetler
                       Row(
                         children: [
                           Expanded(child: _istatBox(context, '${gelenler.length}', 'Gelen')),
@@ -97,7 +105,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                 ),
               ),
 
-              // sekme bar
+              // sekme bar - gelen/gönderilen
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Container(
@@ -109,11 +117,13 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                   child: TabBar(
                     controller: _sekmeKontrol,
                     dividerColor: Colors.transparent,
+                    // seçili sekme mavi arka plan
                     indicator: BoxDecoration(color: Renkler.yumusakMavi, borderRadius: BorderRadius.circular(18)),
                     labelColor: Renkler.anaRenkKoyu,
                     unselectedLabelColor: Renkler.ikinciMetin,
                     labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                     tabs: [
+                      // sekme başlıklarında sayıyı da gösteriyoruz
                       Tab(text: 'Gelen (${gelenler.length})'),
                       Tab(text: 'Gonderilen (${gonderilenler.length})'),
                     ],
@@ -126,7 +136,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                 child: TabBarView(
                   controller: _sekmeKontrol,
                   children: [
-                    // gelen teklifler
+                    // gelen teklifler sekmesi
                     gelenler.isEmpty
                         ? const BosDurumWidget(
                             ikon: Icons.inbox_outlined,
@@ -138,24 +148,28 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                             itemCount: gelenler.length,
                             itemBuilder: (context, i) {
                               var teklif = gelenler[i];
+                              // her teklif için hem hedef hem teklif edilen ilanı çekiyoruz
                               return FutureBuilder<List<Ilan?>>(
                                 future: Future.wait([
                                   ilanSaglayici.ilaniBul(teklif.hedefIlanId),
                                   ilanSaglayici.ilaniBul(teklif.teklifEdilenIlanId),
                                 ]),
                                 builder: (ctx, snap) {
+                                  // veri gelene kadar spinner
                                   if (!snap.hasData) return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
                                   var hedefIlan = snap.data![0];
                                   var teklifIlan = snap.data![1];
+                                  // ilan silinmişse gösterme
                                   if (hedefIlan == null || teklifIlan == null) return const SizedBox.shrink();
 
                                   return TeklifKarti(
                                     teklif: teklif,
                                     hedefIlan: hedefIlan,
                                     teklifEdilenIlan: teklifIlan,
-                                    gelenMi: true,
+                                    gelenMi: true,  // kabul/red butonları göstersin
                                     onKabul: () async {
                                       await context.read<TeklifSaglayici>().teklifDurumunuGuncelle(teklif, TeklifDurumu.kabulEdildi);
+                                      // ilanları da güncelliyoruz, kabul edilen ilanlar pasife geçiyor
                                       context.read<IlanSaglayici>().ilanlariyukle();
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Teklif kabul edildi.'), backgroundColor: Renkler.basariRenk),
@@ -173,7 +187,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                             },
                           ),
 
-                    // gonderilen teklifler
+                    // gönderilen teklifler sekmesi, kabul/red butonu yok çünkü biz gönderdik
                     gonderilenler.isEmpty
                         ? const BosDurumWidget(
                             ikon: Icons.send_outlined,
@@ -195,6 +209,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
                                   var hedefIlan = snap.data![0];
                                   var teklifIlan = snap.data![1];
                                   if (hedefIlan == null || teklifIlan == null) return const SizedBox.shrink();
+                                  // gelenMi: false yapıyoruz, butonlar gözükmesin
                                   return TeklifKarti(teklif: teklif, hedefIlan: hedefIlan, teklifEdilenIlan: teklifIlan, gelenMi: false);
                                 },
                               );
@@ -210,6 +225,7 @@ class _TekliflerEkraniState extends State<TekliflerEkrani> with SingleTickerProv
     );
   }
 
+  // koyu kart içindeki istatistik kutusu
   Widget _istatBox(BuildContext context, String deger, String baslik) {
     return Container(
       padding: const EdgeInsets.all(14),

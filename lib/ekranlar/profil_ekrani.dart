@@ -10,32 +10,39 @@ import '../widgetlar/ilan_karti.dart';
 import '../ekranlar/giris_ekrani.dart';
 import 'ilan_detay_ekrani.dart';
 
+// profil ekranı, kullanıcının kendi ilanlarını görebildiği yer
+// StatelessWidget yaptık çünkü FutureBuilder ile veri çekiyoruz
 class ProfilEkrani extends StatelessWidget {
   const ProfilEkrani({super.key});
 
   @override
   Widget build(BuildContext context) {
     var kimlik = context.watch<KimlikSaglayici>();
+    // bu satır ilanlar değişince profili de güncellemek için
     context.watch<IlanSaglayici>().ilanlar;
     var kullanici = kimlik.aktifKullanici;
 
+    // kullanıcı yoksa boş döndür, normalde olmamalı ama güvenlik için
     if (kullanici == null) return const SizedBox.shrink();
 
+    // FutureBuilder ile kullanıcının ilanlarını asenkron çekiyoruz
     return FutureBuilder<List<Ilan>>(
       future: context.read<IlanSaglayici>().kullaniciyaAitIlanlar(kullanici.id),
       builder: (context, snapshot) {
+        // hâlâ yükleniyorsa spinner göster
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        var ilanlar = snapshot.data ?? [];
-        var aktifSayi = ilanlar.where((i) => i.aktifMi).length;
+        var ilanlar = snapshot.data ?? [];  // null gelirse boş liste
+        var aktifSayi = ilanlar.where((i) => i.aktifMi).length;  // aktif olan ilanların sayısı
 
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Profil'),
             actions: [
+              // sağ üste çıkış butonu
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: TextButton.icon(
@@ -50,6 +57,7 @@ class ProfilEkrani extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // profil bilgileri kartı
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Container(
@@ -69,6 +77,7 @@ class ProfilEkrani extends StatelessWidget {
 
                         Row(
                           children: [
+                            // profil resmi yok, ismin ilk harfini gösteriyoruz
                             Container(
                               width: 74, height: 74,
                               decoration: BoxDecoration(
@@ -77,6 +86,7 @@ class ProfilEkrani extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Text(
+                                  // isim boşsa soru işareti göster
                                   kullanici.adSoyad.isNotEmpty ? kullanici.adSoyad[0].toUpperCase() : '?',
                                   style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white),
                                 ),
@@ -99,12 +109,14 @@ class ProfilEkrani extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
 
+                        // istatistik kutuları
                         Row(
                           children: [
                             Expanded(child: _istatBox(context, '${ilanlar.length}', 'Toplam')),
                             const SizedBox(width: 10),
                             Expanded(child: _istatBox(context, '$aktifSayi', 'Aktif')),
                             const SizedBox(width: 10),
+                            // ilan varsa hazır, yoksa boş
                             Expanded(child: _istatBox(context, aktifSayi > 0 ? 'Hazir' : 'Bos', 'Durum')),
                           ],
                         ),
@@ -112,6 +124,7 @@ class ProfilEkrani extends StatelessWidget {
                     ),
                   ),
                 ),
+                // ilanlar başlığı
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                   child: Row(
@@ -126,6 +139,7 @@ class ProfilEkrani extends StatelessWidget {
                   ),
                 ),
 
+                // ilan yoksa boş durum göster, varsa listele
                 if (ilanlar.isEmpty)
                   const BosDurumWidget(
                     ikon: Icons.inventory_2_outlined,
@@ -134,8 +148,8 @@ class ProfilEkrani extends StatelessWidget {
                   )
                 else
                   ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,  // Column içinde kullandığımız için bunu eklemek zorundayız
+                    physics: const NeverScrollableScrollPhysics(),  // kaydırma üst seviyede yapılsın
                     itemCount: ilanlar.length,
                     itemBuilder: (context, i) {
                       var ilan = ilanlar[i];
@@ -156,6 +170,7 @@ class ProfilEkrani extends StatelessWidget {
     );
   }
 
+  // profil kartı içindeki istatistik kutusu
   Widget _istatBox(BuildContext context, String deger, String baslik) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -174,6 +189,7 @@ class ProfilEkrani extends StatelessWidget {
     );
   }
 
+  // çıkış için onay dialogu gösteriyoruz, yanlışlıkla çıkmasın
   void _cikisYap(BuildContext context) {
     showDialog(
       context: context,
@@ -184,8 +200,9 @@ class ProfilEkrani extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Iptal')),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(ctx);  // dialogu kapat
               context.read<KimlikSaglayici>().cikisYap();
+              // giriş ekranına git, geri dönemesin
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const GirisEkrani()),
                 (route) => false,

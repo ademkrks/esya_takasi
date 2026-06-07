@@ -7,6 +7,8 @@ import '../saglayicilar/ilan_saglayici.dart';
 import '../saglayicilar/kimlik_saglayici.dart';
 import '../sabitler/renkler.dart';
 
+// ilan ekleme ekranı
+// kullanıcı buradan yeni ilan oluşturuyor
 class IlanEkleEkrani extends StatefulWidget {
   const IlanEkleEkrani({super.key});
 
@@ -19,21 +21,25 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
   var _urunAdiKontrol = TextEditingController();
   var _aciklamaKontrol = TextEditingController();
   var _takasTercihiKontrol = TextEditingController();
-  Kategori? _seciliKategori;
-  UrunDurumu? _seciliDurum;
+  Kategori? _seciliKategori;   // dropdown'dan seçilen kategori
+  UrunDurumu? _seciliDurum;    // dropdown'dan seçilen durum
   bool _yukleniyor = false;
 
   @override
   void dispose() {
+    // 3 tane controller var, hepsini temizliyoruz
     _urunAdiKontrol.dispose();
     _aciklamaKontrol.dispose();
     _takasTercihiKontrol.dispose();
     super.dispose();
   }
 
+  // formu kaydetme fonksiyonu
   Future<void> _kaydet() async {
+    // form geçerli değilse dur
     if (!_formAnahtari.currentState!.validate()) return;
 
+    // kategori seçilmemişse uyar
     if (_seciliKategori == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lutfen bir kategori sec.'), backgroundColor: Renkler.beklemdeRenk),
@@ -41,6 +47,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
       return;
     }
 
+    // durum seçilmemişse uyar
     if (_seciliDurum == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lutfen urun durumunu sec.'), backgroundColor: Renkler.beklemdeRenk),
@@ -51,6 +58,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
     var kullanici = context.read<KimlikSaglayici>().aktifKullanici;
     var ilanSaglayici = context.read<IlanSaglayici>();
 
+    // giriş yapılmamışsa ilan ekleyemez
     if (kullanici == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ilan yayinlamak icin giris yapmalisin.'), backgroundColor: Renkler.hataRenk),
@@ -59,11 +67,12 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
     }
 
     setState(() => _yukleniyor = true);
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));  // animasyon için gecikme
     if (!mounted) return;
 
+    // yeni ilan nesnesi oluşturuyoruz
     var yeniIlan = Ilan(
-      id: '',
+      id: '',  // id boş, firebase ekleyince dolacak
       kullaniciId: kullanici.id,
       urunAdi: _urunAdiKontrol.text.trim(),
       aciklama: _aciklamaKontrol.text.trim(),
@@ -73,6 +82,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
       olusturmaTarihi: DateTime.now(),
     );
 
+    // saglayicıya ekliyoruz, o da firebase'e yazıyor
     await ilanSaglayici.ilanEkle(yeniIlan);
     if (!mounted) return;
 
@@ -82,6 +92,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
       const SnackBar(content: Text('Ilanin basariyla yayinlandi.'), backgroundColor: Renkler.basariRenk),
     );
 
+    // formu sıfırlıyoruz, tekrar ilan eklenebilsin
     _formAnahtari.currentState?.reset();
     _urunAdiKontrol.clear();
     _aciklamaKontrol.clear();
@@ -101,6 +112,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
+              // üst bilgi kartı
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -138,6 +150,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 18),
 
 
+              // fotoğraf alanı - şu an sadece görsel, upload yok
               _kart(context, 'Gorsel alani', 'Demo surumde fotograf yuklenmiyor.',
                 Container(
                   height: 180, width: double.infinity,
@@ -159,6 +172,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
                       const SizedBox(height: 14),
                       Text('Fotograf alani', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
+                      // TODO: buraya gerçek upload eklenecek
                       Text('Fotograf yukleme burada olacak.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Renkler.ikinciMetin), textAlign: TextAlign.center),
                     ],
                   ),
@@ -167,6 +181,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 16),
 
 
+              // ürün adı ve açıklama
               _kart(context, 'Temel bilgiler', 'Urunu kisa ve net anlat.',
                 Column(
                   children: [
@@ -178,12 +193,12 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _aciklamaKontrol,
-                      maxLines: 4,
+                      maxLines: 4,  // çok satırlı textarea
                       decoration: const InputDecoration(
                         labelText: 'Aciklama',
                         hintText: 'Urunun durumu ve notlarini yaz.',
                         prefixIcon: Icon(Icons.description_outlined),
-                        alignLabelWithHint: true,
+                        alignLabelWithHint: true,  // label üste hizalansin
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Aciklama bos birakilamaz.' : null,
                     ),
@@ -193,12 +208,14 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 16),
 
 
+              // kategori ve durum dropdown'ları
               _kart(context, 'Kategori ve durum', 'Dogru kategori daha iyi eslesme saglar.',
                 Column(
                   children: [
                     DropdownButtonFormField<Kategori>(
                       initialValue: _seciliKategori,
                       decoration: const InputDecoration(labelText: 'Kategori', prefixIcon: Icon(Icons.category_outlined)),
+                      // tüm kategorileri seçenek olarak gösteriyoruz
                       items: Kategori.values.map((k) => DropdownMenuItem(value: k, child: Text(k.etiket))).toList(),
                       onChanged: (v) => setState(() => _seciliKategori = v),
                     ),
@@ -215,6 +232,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 16),
 
 
+              // takas tercihi
               _kart(context, 'Takas tercihin', 'Ne aradigini yazarsan daha iyi eslesirsin.',
                 TextFormField(
                   controller: _takasTercihiKontrol,
@@ -225,6 +243,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 16),
 
 
+              // ipucu kutusu
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
@@ -248,10 +267,12 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
               const SizedBox(height: 20),
 
 
+              // yayınla butonu
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _yukleniyor ? null : _kaydet,
+                  // yükleniyorsa spinner, değilse roket ikonu
                   icon: _yukleniyor
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.rocket_launch_outlined),
@@ -265,6 +286,7 @@ class _IlanEkleEkraniState extends State<IlanEkleEkrani> {
     );
   }
 
+  // form bölümlerini karta sarmak için yardımcı widget
   Widget _kart(BuildContext context, String baslik, String aciklama, Widget icerik) {
     return Container(
       padding: const EdgeInsets.all(18),

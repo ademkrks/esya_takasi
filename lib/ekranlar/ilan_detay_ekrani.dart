@@ -1,3 +1,4 @@
+// dart:io'yu import ediyoruz çünkü Image.file kullanıyoruz
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,24 +11,32 @@ import '../saglayicilar/kimlik_saglayici.dart';
 import '../saglayicilar/teklif_saglayici.dart';
 import '../widgetlar/bilgi_satiri.dart';
 
+// ilan detay ekranı, bir ilanın tüm bilgilerini gösteriyor
+// StatelessWidget çünkü sayfada hiçbir state değişmiyor
 class IlanDetayEkrani extends StatelessWidget {
   const IlanDetayEkrani({super.key, required this.ilan});
 
+  // hangi ilanı göstereceğimizi dışarıdan alıyoruz
   final Ilan ilan;
 
   @override
   Widget build(BuildContext context) {
     var aktifKullaniciId = context.read<KimlikSaglayici>().aktifKullanici?.id ?? '';
+    // bu ilan bize mi ait kontrol ediyoruz
     var kendiIlani = ilan.kullaniciId == aktifKullaniciId;
+    // kategoriye göre renk ve ikon
     var katRengi = _kategoriRengi(ilan.kategori);
     var katIkonu = _kategoriIkonu(ilan.kategori);
+    // fotoğraf var mı?
     var fotografVar = ilan.fotografYolu != null && ilan.fotografYolu!.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ilan Detayi')),
+      // alta sabit çubuk, kendi ilanımızsa bilgi mesajı, değilse teklif butonu
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: kendiIlani
+            // kendi ilanımızsa teklif gönderemeyiz, bilgi mesajı gösteriyoruz
             ? Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -50,12 +59,13 @@ class IlanDetayEkrani extends StatelessWidget {
                   ],
                 ),
               )
+            // başkasının ilanıysa teklif gönder butonu gösteriyoruz
             : ElevatedButton.icon(
                 onPressed: () => _teklifDialog(context, aktifKullaniciId),
                 icon: const Icon(Icons.swap_horiz_rounded),
                 label: const Text('Bu ilana teklif gonder'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Renkler.vurguRenk,
+                  backgroundColor: Renkler.vurguRenk,  // turuncu buton
                   minimumSize: const Size.fromHeight(58),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
@@ -67,6 +77,7 @@ class IlanDetayEkrani extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
+            // ürün görseli veya kategori arka planı
             Container(
               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               height: 280,
@@ -77,10 +88,12 @@ class IlanDetayEkrani extends StatelessWidget {
               ),
               child: Stack(
                 children: [
+                  // fotoğraf varsa göster, yoksa renkli gradient arka plan
                   Positioned.fill(
                     child: fotografVar ? _fotografGoster(katRengi) : _arkaplanGoster(katRengi),
                   ),
 
+                  // sol üstte kategori rozeti
                   Positioned(
                     left: 22, top: 22,
                     child: Container(
@@ -97,6 +110,7 @@ class IlanDetayEkrani extends StatelessWidget {
                     ),
                   ),
 
+                  // sağ üstte ürün durumu
                   Positioned(
                     right: 22, top: 22,
                     child: Container(
@@ -107,6 +121,7 @@ class IlanDetayEkrani extends StatelessWidget {
                     ),
                   ),
 
+                  // ortada büyük kategori ikonu
                   Align(
                     alignment: Alignment.center,
                     child: Container(
@@ -119,6 +134,7 @@ class IlanDetayEkrani extends StatelessWidget {
                     ),
                   ),
 
+                  // altta ürün adı
                   Positioned(
                     left: 22, right: 22, bottom: 24,
                     child: Text(ilan.urunAdi,
@@ -130,6 +146,7 @@ class IlanDetayEkrani extends StatelessWidget {
             ),
 
 
+            // ürün adı ve aktif/pasif durumu
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
               child: Row(
@@ -158,6 +175,7 @@ class IlanDetayEkrani extends StatelessWidget {
             ),
 
 
+            // kategori ve durum bilgisi kutucukları
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
               child: Row(
@@ -170,6 +188,7 @@ class IlanDetayEkrani extends StatelessWidget {
             ),
 
 
+            // takas tercihi kartı, turuncu arka planla dikkat çekiyor
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               padding: const EdgeInsets.all(18),
@@ -200,6 +219,7 @@ class IlanDetayEkrani extends StatelessWidget {
             ),
 
 
+            // açıklama kartı
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               padding: const EdgeInsets.all(18),
@@ -219,6 +239,7 @@ class IlanDetayEkrani extends StatelessWidget {
             ),
 
 
+            // hızlı bilgi kartı, BilgiSatiri widget'larını kullanıyoruz
             Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               padding: const EdgeInsets.all(18),
@@ -244,6 +265,7 @@ class IlanDetayEkrani extends StatelessWidget {
     );
   }
 
+  // küçük bilgi kutucuğu
   Widget _bilgiKutu(BuildContext context, IconData ikon, String baslik, String deger, Color renk) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -261,15 +283,18 @@ class IlanDetayEkrani extends StatelessWidget {
     );
   }
 
+  // teklif gönderme dialogu, altta çıkan modal sheet
   Future<void> _teklifDialog(BuildContext context, String aktifKullaniciId) async {
     var ilanSaglayici = context.read<IlanSaglayici>();
     var teklifSaglayici = context.read<TeklifSaglayici>();
+    // kullanıcının aktif ilanlarını getiriyoruz, bunlar teklif edilebilir
     var benimIlanlar = (await ilanSaglayici.kullaniciyaAitIlanlar(aktifKullaniciId))
-        .where((i) => i.aktifMi)
+        .where((i) => i.aktifMi)  // sadece aktif olanlar
         .toList();
 
     if (!context.mounted) return;
 
+    // hiç aktif ilanı yoksa teklif gönderemez
     if (benimIlanlar.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Teklif gondermek icin once bir ilan eklemelisin.'), backgroundColor: Renkler.beklemdeRenk),
@@ -277,10 +302,11 @@ class IlanDetayEkrani extends StatelessWidget {
       return;
     }
 
+    // modal bottom sheet ile ilan seçtiriyoruz
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent,  // özel tasarım için transparent yapıyoruz
       builder: (ctx) => SafeArea(
         child: Container(
           margin: const EdgeInsets.all(12),
@@ -291,9 +317,10 @@ class IlanDetayEkrani extends StatelessWidget {
             border: Border.all(color: Renkler.sinir),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,  // içeriğe göre büyüsün
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // üstte küçük çizgi, sürüklenebilir olduğunu gösteriyor
               Center(
                 child: Container(
                   width: 44, height: 5,
@@ -307,6 +334,7 @@ class IlanDetayEkrani extends StatelessWidget {
               Text('Bu ilana karsi hangi urununu gondermek istedigini sec.',
                   style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: Renkler.ikinciMetin)),
               const SizedBox(height: 18),
+              // ilanları listele
               ...benimIlanlar.map((benimIlan) => Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(color: Renkler.arkaplan, borderRadius: BorderRadius.circular(22)),
@@ -322,7 +350,8 @@ class IlanDetayEkrani extends StatelessWidget {
                   subtitle: Text(benimIlan.urunDurumu.etiket),
                   trailing: const Icon(Icons.arrow_forward_rounded),
                   onTap: () async {
-                    Navigator.pop(ctx);
+                    Navigator.pop(ctx);  // sheet'i kapat
+                    // teklifi gönderiyoruz
                     await teklifSaglayici.teklifGonder(
                       gonderenKullaniciId: aktifKullaniciId,
                       aliciKullaniciId: ilan.kullaniciId,
@@ -343,6 +372,7 @@ class IlanDetayEkrani extends StatelessWidget {
     );
   }
 
+  // kategoriye göre arka plan rengi döndürüyor
   Color _kategoriRengi(Kategori k) {
     switch (k) {
       case Kategori.elektronik: return const Color(0xFF3D7FEF);
@@ -354,6 +384,7 @@ class IlanDetayEkrani extends StatelessWidget {
     }
   }
 
+  // kategoriye göre ikon döndürüyor
   IconData _kategoriIkonu(Kategori k) {
     switch (k) {
       case Kategori.elektronik: return Icons.devices_outlined;
@@ -365,6 +396,7 @@ class IlanDetayEkrani extends StatelessWidget {
     }
   }
 
+  // gradient arka plan widget'ı
   Widget _arkaplanGoster(Color renk) {
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -377,11 +409,14 @@ class IlanDetayEkrani extends StatelessWidget {
     );
   }
 
+  // fotoğraf göstericisi, url ise network, değilse dosyadan yüklüyor
   Widget _fotografGoster(Color renk) {
     var yol = ilan.fotografYolu!;
     if (yol.startsWith('http')) {
+      // internet URL'si ise Image.network kullanıyoruz
       return Image.network(yol, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _arkaplanGoster(renk));
     }
+    // yerel dosyaysa Image.file kullanıyoruz
     return Image.file(File(yol), fit: BoxFit.cover, errorBuilder: (_, __, ___) => _arkaplanGoster(renk));
   }
 }

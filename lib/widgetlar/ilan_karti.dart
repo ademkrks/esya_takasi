@@ -1,3 +1,4 @@
+// dosya yüklemek için lazım
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../modeller/ilan_modeli.dart';
@@ -6,16 +7,18 @@ import '../enumlar/urun_durumu.dart';
 import '../sabitler/renkler.dart';
 import '../sabitler/degerler.dart';
 
+// ana sayfada ve profilde kullanılan ilan kartı widget'ı
+// ilan bilgilerini güzel bir kart şeklinde gösteriyor
 class IlanKarti extends StatelessWidget {
   const IlanKarti({super.key, required this.ilan, required this.onTap});
 
-  final Ilan ilan;
-  final VoidCallback onTap;
+  final Ilan ilan;             // gösterilecek ilan
+  final VoidCallback onTap;   // tıklandığında ne yapılacak
 
   @override
   Widget build(BuildContext context) {
-    var katRengi = _katRengi(ilan.kategori);
-    var ikon = _katIkonu(ilan.kategori);
+    var katRengi = _katRengi(ilan.kategori);   // kategoriye göre renk
+    var ikon = _katIkonu(ilan.kategori);        // kategoriye göre ikon
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: Degerler.normalBosluk, vertical: Degerler.kucukBosluk),
@@ -25,6 +28,7 @@ class IlanKarti extends StatelessWidget {
         border: Border.all(color: Renkler.sinir),
         boxShadow: const [BoxShadow(color: Renkler.golge, blurRadius: 24, offset: Offset(0, 10))],
       ),
+      // Material + InkWell ile tıklama animasyonu (ripple) alıyoruz
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -34,6 +38,7 @@ class IlanKarti extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
+              // üst görsel alanı
               Container(
                 height: 156,
                 clipBehavior: Clip.antiAlias,
@@ -42,6 +47,7 @@ class IlanKarti extends StatelessWidget {
                 ),
                 child: Stack(
                   children: [
+                    // gradient arka plan
                     Positioned.fill(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -53,8 +59,10 @@ class IlanKarti extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // fotoğraf varsa üstüne koyuyoruz
                     if (ilan.fotografYolu != null && ilan.fotografYolu!.isNotEmpty)
                       Positioned.fill(child: _foto(ilan.fotografYolu!, katRengi)),
+                    // sol üste ikon kutusu
                     Positioned(
                       left: 16, top: 16,
                       child: Container(
@@ -63,6 +71,7 @@ class IlanKarti extends StatelessWidget {
                         child: Icon(ikon, color: katRengi, size: 28),
                       ),
                     ),
+                    // sağ üste kategori yazısı
                     Positioned(
                       right: 16, top: 16,
                       child: Container(
@@ -71,6 +80,7 @@ class IlanKarti extends StatelessWidget {
                         child: Text(ilan.kategori.etiket, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Renkler.metin)),
                       ),
                     ),
+                    // altta kategori mesajı
                     Positioned(
                       left: 16, right: 16, bottom: 16,
                       child: Text(_katMesaji(ilan.kategori),
@@ -82,6 +92,7 @@ class IlanKarti extends StatelessWidget {
               ),
 
 
+              // alt içerik alanı
               Padding(
                 padding: const EdgeInsets.all(Degerler.normalBosluk),
                 child: Column(
@@ -90,12 +101,14 @@ class IlanKarti extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // ürün adı
                         Expanded(
                           child: Text(ilan.urunAdi,
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                              maxLines: 2, overflow: TextOverflow.ellipsis),
+                              maxLines: 2, overflow: TextOverflow.ellipsis),  // uzunsa ... ile kes
                         ),
                         const SizedBox(width: 12),
+                        // ürün durumu rozeti
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
@@ -108,12 +121,13 @@ class IlanKarti extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
+                    // açıklama, max 3 satır gösteriyoruz
                     Text(ilan.aciklama,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Renkler.ikinciMetin),
                         maxLines: 3, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 14),
 
-
+                    // takas tercihi kutusu
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: Renkler.katman, borderRadius: BorderRadius.circular(Degerler.normalRadius)),
@@ -138,6 +152,7 @@ class IlanKarti extends StatelessWidget {
                               ],
                             ),
                           ),
+                          // ok ikonu, tıklanabilir olduğunu gösteriyor
                           const Icon(Icons.arrow_forward_rounded, color: Renkler.ikinciMetin, size: 18),
                         ],
                       ),
@@ -152,22 +167,26 @@ class IlanKarti extends StatelessWidget {
     );
   }
 
+  // fotoğraf widget'ı, url mi dosya mı kontrol ediyor
   Widget _foto(String yol, Color renk) {
     if (yol.startsWith('http')) {
       return Image.network(yol, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox());
     }
+    // yerel dosya
     return Image.file(File(yol), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox());
   }
 
+  // ürün durumuna göre renk
   Color _durumRengi(UrunDurumu d) {
     switch (d) {
-      case UrunDurumu.yeni: return Renkler.basariRenk;
-      case UrunDurumu.azKullanilmis: return Renkler.anaRenk;
-      case UrunDurumu.iyi: return Renkler.beklemdeRenk;
-      case UrunDurumu.kotu: return Renkler.hataRenk;
+      case UrunDurumu.yeni: return Renkler.basariRenk;         // yeşil
+      case UrunDurumu.azKullanilmis: return Renkler.anaRenk;  // mavi
+      case UrunDurumu.iyi: return Renkler.beklemdeRenk;        // sarı
+      case UrunDurumu.kotu: return Renkler.hataRenk;           // kırmızı
     }
   }
 
+  // kategoriye göre arka plan rengi
   Color _katRengi(Kategori k) {
     switch (k) {
       case Kategori.elektronik: return const Color(0xFF3D7FEF);
@@ -179,6 +198,7 @@ class IlanKarti extends StatelessWidget {
     }
   }
 
+  // kategoriye göre ikon
   IconData _katIkonu(Kategori k) {
     switch (k) {
       case Kategori.elektronik: return Icons.devices_outlined;
@@ -190,6 +210,7 @@ class IlanKarti extends StatelessWidget {
     }
   }
 
+  // kategoriye göre açıklama metni
   String _katMesaji(Kategori k) {
     switch (k) {
       case Kategori.elektronik: return 'Teknoloji urunleri ve aksesuar';
